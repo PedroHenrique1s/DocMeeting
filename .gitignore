@@ -26,3 +26,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Ignorar environments em qualquer pasta
+**/environments/environment.ts
+**/environments/environment.development.ts
