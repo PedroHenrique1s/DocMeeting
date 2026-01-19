@@ -1,0 +1,104 @@
+<div class="upload-section">
+  <label for="fileInput" class="custom-file-upload" [class.disabled]="isLoading">
+    @if (isLoading) {
+      <span>⏳ Processando áudio e gerando ata... aguarde</span>
+    } @else {
+      <span>📂 Selecionar Arquivo (MP3, MP4, TXT)</span>
+    }
+  </label>
+  <input 
+    id="fileInput" 
+    type="file" 
+    accept=".mp3, .mp4, .txt" 
+    (change)="onFileSelected($event)" 
+    [disabled]="isLoading"
+  />
+</div>
+
+@if (meetings.length > 0) {
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Resumo Rápido</th>
+          <th>Data/Hora</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of meetings; track m.id) {
+          <tr>
+            <td><span class="badge">{{ m.category }}</span></td>
+            <td>{{ m.summary }}</td>
+            <td>{{ m.date | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="actions">
+              <button (click)="viewMeeting(m)" class="btn-view" title="Visualizar">👁️</button>
+              <button (click)="deleteMeeting(m.id)" class="btn-delete" title="Excluir">🗑️</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (selectedMeeting) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      
+      <div class="modal-header">
+        <div class="header-title">
+          <h2>{{ selectedMeeting.category }}</h2>
+          
+          <button (click)="toggleEdit()" class="btn-icon-edit" title="Editar Ata">
+            {{ isEditing ? '❌ Cancelar' : '✏️ Editar' }}
+          </button>
+
+          @if (isEditing) {
+            <button (click)="toggleSourceCode()" class="btn-icon-edit" title="Ver Código Fonte">
+              {{ showHtmlCode ? '👁️ Ver Visual' : '💻 Ver Código' }}
+            </button>
+          }
+        </div>
+        <button (click)="closeModal()" class="close-btn">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        
+        @if (isEditing) {
+          @if (showHtmlCode) {
+            <div class="edit-container">
+              <p class="edit-hint code-hint">⚠️ Modo Código: Cuidado com as tags HTML.</p>
+              <textarea [(ngModel)]="selectedMeeting.fullContent" class="editor-textarea"></textarea>
+            </div>
+          } @else {
+            <div class="edit-container">
+              <p class="edit-hint visual-hint">✨ Modo Visual: Clique e digite diretamente no texto abaixo.</p>
+              
+              <div 
+                #visualEditor
+                class="visual-editor" 
+                contenteditable="true" 
+                (input)="onVisualContentChange($event)"
+              ></div>
+            </div>
+          }
+
+        } @else {
+          <div [innerHTML]="selectedMeeting.fullContent"></div>
+        }
+      </div>
+  
+      <div class="modal-footer">
+        @if (isEditing) {
+          <button (click)="saveEdit()" class="btn-primary">💾 Salvar Alterações</button>
+        } @else {
+          <button (click)="copyContent()" class="btn-secondary">📋 Copiar Texto</button>
+          <button (click)="sendEmail()" class="btn-primary">✉️ Enviar por E-mail</button>
+        }
+      </div>
+
+    </div>
+  </div>
+}

@@ -1,0 +1,390 @@
+// =========================================
+// 1. VARIÁVEIS & MIXINS
+// =========================================
+$primary-color: #2c3e50;
+$accent-color: #3498db;
+$success-color: #27ae60;
+$danger-color: #c0392b;
+$warning-bg: #fff3cd;
+$text-color: #333333;
+$bg-light: #f4f7f6;
+$border-radius: 8px;
+$shadow-sm: 0 2px 5px rgba(0,0,0,0.05);
+$shadow-md: 0 5px 15px rgba(0,0,0,0.1);
+$transition: all 0.3s ease;
+
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin card {
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: $shadow-sm;
+  padding: 1.5rem;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+@mixin btn-base {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: $border-radius;
+  cursor: pointer;
+  font-weight: 600;
+  transition: $transition;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:hover { transform: translateY(-2px); box-shadow: $shadow-sm; }
+  &:active { transform: translateY(0); }
+}
+
+// =========================================
+// 2. UPLOAD SECTION
+// =========================================
+.upload-section {
+  margin-bottom: 2rem;
+  input[type="file"] { display: none; }
+
+  .custom-file-upload {
+    @include card;
+    @include flex-center;
+    border: 2px dashed lighten($accent-color, 20%);
+    color: $accent-color;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    min-height: 120px;
+    background: white;
+    transition: $transition;
+
+    &:hover {
+      background-color: lighten($accent-color, 45%);
+      border-color: $accent-color;
+    }
+
+    &.disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      background-color: #fafafa;
+      color: #999;
+      border-color: #ddd;
+    }
+  }
+}
+
+// =========================================
+// 3. TABELA DE REUNIÕES
+// =========================================
+.table-container {
+  @include card;
+  padding: 0;
+  overflow: hidden;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td {
+      padding: 1.2rem 1.5rem;
+      text-align: left;
+      vertical-align: middle; 
+    }
+
+    thead {
+      background-color: #f8f9fa;
+      border-bottom: 2px solid #eee;
+      th {
+        color: $primary-color;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #eee;
+      &:last-child { border-bottom: none; }
+      &:hover { background-color: #fafafa; }
+    }
+
+    th:nth-child(1), td:nth-child(1) { width: 20%; min-width: 180px; } 
+    th:nth-child(2), td:nth-child(2) { width: auto; } 
+    th:nth-child(3), td:nth-child(3) { width: 180px; min-width: 180px; text-align: center; white-space: nowrap; } 
+    th:nth-child(4), td:nth-child(4) { width: 120px; text-align: center; } 
+  }
+}
+
+.badge {
+  background-color: lighten($accent-color, 42%);
+  color: darken($accent-color, 15%);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+
+  button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    padding: 6px;
+    border-radius: 50%;
+    transition: $transition;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &.btn-view { color: #555; }
+    &.btn-view:hover { background-color: lighten($accent-color, 40%); color: $accent-color; }
+    
+    &.btn-delete { color: #555; }
+    &.btn-delete:hover { background-color: lighten($danger-color, 40%); color: $danger-color; }
+  }
+}
+
+// =========================================
+// 4. MODAL
+// =========================================
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; 
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+  @include flex-center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: white;
+  width: 90%;
+  max-width: 800px;
+  max-height: 85vh;
+  border-radius: 12px;
+  box-shadow: $shadow-md;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    // --- NOVO: Agrupa Título e Botão de Editar ---
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 1rem; // Espaço entre o título e o botão
+
+      h2 { margin: 0; font-size: 1.4rem; color: $primary-color; font-weight: 700; }
+    }
+
+    // --- NOVO: Botão de Editar ---
+    .btn-icon-edit {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 5px 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      &:hover {
+        background-color: #f8f9fa;
+        border-color: $accent-color;
+        color: $accent-color;
+        transform: translateY(-1px);
+      }
+    }
+
+    .close-btn {
+      background: none; border: none; font-size: 2rem; cursor: pointer; color: #ccc;
+      transition: color 0.2s;
+      &:hover { color: $danger-color; }
+    }
+  }
+
+  .modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #f0f0f0;
+    background-color: #fafafa;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+}
+
+.btn-primary { 
+  @include btn-base; 
+  background-color: $accent-color; 
+  color: white; 
+  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+  &:hover { background-color: darken($accent-color, 8%); transform: translateY(-1px); }
+}
+
+.btn-secondary { 
+  @include btn-base; 
+  background-color: white; 
+  color: #7f8c8d; 
+  border: 1px solid #dfe6e9;
+  &:hover { background-color: #f8f9fa; color: #2c3e50; border-color: #bdc3c7; }
+}
+
+// =========================================
+// 5. CONTEÚDO DA ATA (Leitura)
+// =========================================
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  line-height: 1.7;
+  font-size: 1rem;
+  color: #444;
+
+  ::ng-deep {
+    h2 {
+      color: $primary-color;
+      font-size: 1.5rem;
+      border-bottom: 2px solid rgba($accent-color, 0.2);
+      padding-bottom: 0.8rem;
+      margin-top: 0;
+    }
+    h3 {
+      color: $primary-color;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 18px;
+        background-color: $accent-color;
+        border-radius: 2px;
+      }
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 1.5rem;
+      
+      li {
+        position: relative;
+        padding-left: 1.5rem;
+        margin-bottom: 0.8rem;
+        &::before {
+          content: '•';
+          color: $accent-color;
+          font-weight: bold;
+          position: absolute;
+          left: 0;
+          font-size: 1.2rem;
+          line-height: 1.2rem;
+        }
+        strong { color: #2c3e50; font-weight: 600; }
+      }
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid #eee;
+      margin: 2.5rem 0;
+    }
+  }
+}
+
+// =========================================
+// 5.1. MODO EDIÇÃO (Novo)
+// =========================================
+.edit-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .edit-hint {
+    font-size: 0.85rem;
+    color: darken($warning-bg, 50%);
+    background-color: $warning-bg;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border: 1px solid darken($warning-bg, 10%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.editor-textarea {
+  width: 100%;
+  min-height: 400px; /* Altura boa para ver o HTML */
+  padding: 1.5rem;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace; /* Fonte monoespaçada */
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fcfcfc;
+  resize: vertical;
+  line-height: 1.6;
+  color: #2c3e50;
+  transition: $transition;
+
+  &:focus {
+    outline: none;
+    border-color: $accent-color;
+    box-shadow: 0 0 0 3px rgba($accent-color, 0.1);
+    background-color: white;
+  }
+}
+
+// =========================================
+// 6. ANIMAÇÕES & RESPONSIVIDADE
+// =========================================
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 768px) {
+  .table-container {
+    border-radius: 8px;
+    overflow-x: auto; 
+    table { min-width: 800px; }
+  }
+
+  .modal-content {
+    width: 100%; height: 100%; max-height: 100%; border-radius: 0;
+  }
+  
+  // No mobile, o botão de editar pode ficar abaixo do título
+  .modal-header .header-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
