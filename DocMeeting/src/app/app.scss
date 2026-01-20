@@ -1,4 +1,9 @@
 // =========================================
+// 0. IMPORTAÇÃO OBRIGATÓRIA (Sempre na linha 1)
+// =========================================
+@use 'sass:color';
+
+// =========================================
 // VARIÁVEIS GLOBAIS
 // =========================================
 $primary-color: #2c3e50;
@@ -9,23 +14,23 @@ $bg-light: #f4f7f6;
 $card-bg: #ffffff;
 
 :host {
-  display: flex;       // Muda para Flex para controlar altura total
+  display: flex; // Muda para Flex para controlar altura total
   flex-direction: column;
-  height: 100vh;       // Ocupa 100% da viewport
+  height: 100vh; // Ocupa 100% da viewport
   width: 100vw;
   background-color: $bg-light;
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: $text-color;
-  overflow: hidden;    // Garante que nada vaze do componente
+  overflow: hidden; // Garante que nada vaze do componente
 }
 
 .container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  height: 100%;        // Ocupa toda a altura do host
-  padding: 1rem 2rem;  // Padding seguro
-  
+  height: 100%; // Ocupa toda a altura do host
+  padding: 1rem 2rem; // Padding seguro
+
   // FLEXBOX VERTICAL MÁGICO
   display: flex;
   flex-direction: column;
@@ -59,13 +64,15 @@ header.hero {
     font-weight: 800;
     line-height: 1.1;
   }
-  
+
   .subtitle {
-    color: lighten($text-color, 20%);
+    // CORRIGIDO AQUI:
+    color: color.adjust($text-color, $lightness: 20%);
+
     font-size: 1rem;
     margin: 0.5rem auto 0;
     max-width: 600px;
-    
+
     // Esconde o subtítulo em telas muito curtas para salvar espaço
     @media (max-height: 700px) {
       display: none;
@@ -90,15 +97,15 @@ header.hero {
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   width: 100%;
-  
+
   .benefit-card {
     background: $card-bg;
     padding: 1.5rem;
     border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-    border: 1px solid rgba(0,0,0,0.04);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
     text-align: center;
-    
+
     // Layout Flex interno para centralizar
     display: flex;
     flex-direction: column;
@@ -106,7 +113,11 @@ header.hero {
     justify-content: center;
 
     transition: transform 0.2s;
-    &:hover { transform: translateY(-3px); border-color: $accent-color; }
+
+    &:hover {
+      transform: translateY(-3px);
+      border-color: $accent-color;
+    }
 
     .icon {
       font-size: 2rem;
@@ -126,7 +137,7 @@ header.hero {
       color: $text-muted;
       margin: 0;
       line-height: 1.3;
-      
+
       // Se a tela for baixa, limita o texto a 2 linhas
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -148,11 +159,13 @@ header.hero {
   text-align: center;
   margin-bottom: 1rem;
   position: relative;
-  
+
   &::before {
     content: '';
     position: absolute;
-    top: 50%; left: 0; right: 0;
+    top: 50%;
+    left: 0;
+    right: 0;
     height: 1px;
     background: linear-gradient(to right, transparent, #ddd, transparent);
   }
@@ -191,11 +204,22 @@ footer {
 // Para telas com altura menor que 768px
 // =========================================
 @media (max-height: 768px) {
-  .container { padding: 0.5rem 2rem; } // Menos padding nas bordas
-  
+  .container {
+    padding: 0.5rem 2rem;
+  }
+
+  // Menos padding nas bordas
+
   header.hero {
-    h1 { font-size: 2rem; } // Título menor
-    .badge-new { margin-bottom: 0.2rem; padding: 2px 8px; }
+    h1 {
+      font-size: 2rem;
+    }
+
+    // Título menor
+    .badge-new {
+      margin-bottom: 0.2rem;
+      padding: 2px 8px;
+    }
   }
 
   .benefits-section {
@@ -204,23 +228,51 @@ footer {
 
   .benefits-grid {
     gap: 1rem;
-    
+
     .benefit-card {
       padding: 0.8rem; // Card bem fino
-      
-      .icon { font-size: 1.5rem; margin-bottom: 0.2rem; }
-      h3 { font-size: 0.9rem; }
-      p { display: none; } // <--- REMOVE O TEXTO DO CARD se a tela for muito baixa
+
+      .icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.2rem;
+      }
+
+      h3 {
+        font-size: 0.9rem;
+      }
+
+      p {
+        display: none;
+      }
+
+      // <--- REMOVE O TEXTO DO CARD se a tela for muito baixa
     }
   }
-  
-  .divider { margin-bottom: 0.5rem; }
+
+  .divider {
+    margin-bottom: 0.5rem;
+  }
 }
 
 // Mobile (Largura) - Aqui permitimos scroll
 @media (max-width: 768px) {
-  :host { height: auto; overflow-y: auto; }
-  .container { display: block; height: auto; padding: 2rem 1rem; }
-  .benefits-grid { grid-template-columns: 1fr; }
-  .benefits-grid .benefit-card p { display: block; } // Volta o texto no mobile
+  :host {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .container {
+    display: block;
+    height: auto;
+    padding: 2rem 1rem;
+  }
+
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .benefits-grid .benefit-card p {
+    display: block;
+  }
+
 }
