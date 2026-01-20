@@ -1,0 +1,13 @@
+@if (message) {
+  <div class="toast-container" [class]="type" (click)="clear()">
+    <div class="icon">
+      @if (type === 'success') { ✅ }
+      @else if (type === 'error') { ❌ }
+      @else { ℹ️ }
+    </div>
+    <div class="content">
+      <p>{{ message }}</p>
+    </div>
+    <span class="close-hint">×</span>
+  </div>
+}
