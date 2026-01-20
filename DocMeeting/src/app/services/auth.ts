@@ -78,4 +78,26 @@ export class AuthService {
         .eq('id', user.id);
     }
   }
+
+  async signInWithOtp(email: string) {
+    return await this.supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin 
+      }
+    });
+  }
+
+  async signUp(email: string, pass: string) {
+    return await this.supabase.auth.signUp({
+      email: email,
+      password: pass,
+      options: {
+        data: {
+          full_name: email.split('@')[0], // Nome provisório baseado no e-mail
+        },
+        emailRedirectTo: window.location.origin
+      }
+    });
+  }
 }
