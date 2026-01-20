@@ -220,12 +220,8 @@ $transition: all 0.3s ease;
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
-
-  // --- CORREÇÃO SAFARI/iOS ---
-  -webkit-backdrop-filter: blur(3px); // Essencial para iPhone/Mac
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
-  // ---------------------------
-
   @include flex-center;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
@@ -344,6 +340,7 @@ $transition: all 0.3s ease;
   font-size: 1rem;
   color: #444;
 
+  // ESTILOS PARA HTML INJETADO (SafeHtml)
   ::ng-deep {
     h2 {
       color: $primary-color;
@@ -370,6 +367,30 @@ $transition: all 0.3s ease;
         height: 18px;
         background-color: $accent-color;
         border-radius: 2px;
+      }
+    }
+
+    // --- CORREÇÃO VISUAL ---
+    // Estiliza os blocos de texto para ficarem iguais ao modo edição
+    blockquote {
+      background-color: #fff8e1; // Fundo bege
+      border-left: 5px solid #ffb300; // Borda laranja
+      margin: 1.5rem 0;
+      padding: 1rem 1.5rem;
+      border-radius: 4px;
+      color: #5d4037;
+
+      strong {
+        color: #d84315;
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+
+      // Remove margem do último parágrafo dentro do blockquote
+      p:last-child {
+        margin-bottom: 0;
       }
     }
 
@@ -409,7 +430,7 @@ $transition: all 0.3s ease;
 }
 
 // =========================================
-// 5.1. MODO EDIÇÃO (Novo)
+// 5.1. MODO EDIÇÃO
 // =========================================
 .edit-container {
   display: flex;
