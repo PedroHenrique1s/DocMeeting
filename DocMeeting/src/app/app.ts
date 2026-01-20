@@ -2,16 +2,19 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth';
 import { UploadArquivo } from './components/upload-arquivo/upload-arquivo';
+import { AuthModal } from './components/auth-modal/auth-modal';
+import { Toast } from './components/toast/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [UploadArquivo, CommonModule],
+  imports: [UploadArquivo, CommonModule, AuthModal, Toast],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
   currentUser$;
   credits = 0;
+  showAuthModal = false;
 
   constructor(private authService: AuthService) {
     // 2. Atribua o valor AQUI dentro. Agora o authService já existe.
@@ -33,7 +36,7 @@ export class App {
   }
 
   loginEmail() {
-    alert('Funcionalidade de E-mail será implementada no próximo passo!');
+    this.showAuthModal = true;
   }
 
   logout() {

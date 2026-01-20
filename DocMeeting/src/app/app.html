@@ -68,3 +68,8 @@
   </footer>
 
 </div>
+
+@if (showAuthModal) {
+  <app-auth-modal (close)="showAuthModal = false"></app-auth-modal>
+}
+<app-toast></app-toast>
