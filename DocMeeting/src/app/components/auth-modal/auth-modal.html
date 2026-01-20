@@ -1,0 +1,56 @@
+<div class="modal-backdrop" (click)="close.emit()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <button class="close-btn" (click)="close.emit()">&times;</button>
+
+    <div class="auth-header">
+      <h2>{{ isSignUp ? 'Criar nova conta' : 'Acesse sua conta' }}</h2>
+      <p class="subtitle">
+        {{ isSignUp ? 'Preencha os dados abaixo para começar.' : 'Enviaremos um link de acesso instantâneo para seu e-mail.' }}
+      </p>
+    </div>
+
+    <form (submit)="handleAuth($event)" class="auth-form">
+      <div class="input-group">
+        <label for="email">E-mail</label>
+        <input 
+          type="email" 
+          id="email" 
+          [(ngModel)]="email" 
+          name="email" 
+          placeholder="seu@email.com"
+          required
+        >
+      </div>
+
+      @if (isSignUp) {
+        <div class="input-group">
+          <label for="password">Senha</label>
+          <input 
+            type="password" 
+            id="password" 
+            [(ngModel)]="password" 
+            name="password" 
+            placeholder="Sua senha secreta"
+            required
+          >
+        </div>
+      }
+
+      <button type="submit" class="btn-submit" [disabled]="loading">
+        @if (loading) { ⏳ Processando... } 
+        @else { {{ isSignUp ? 'Cadastrar' : 'Enviar Link Mágico' }} }
+      </button>
+    </form>
+
+    <div class="toggle-mode">
+      <p>
+        {{ isSignUp ? 'Já tem conta?' : 'Não tem conta?' }}
+        <a (click)="toggleMode()">
+          {{ isSignUp ? 'Entre aqui' : 'Crie uma agora' }}
+        </a>
+      </p>
+    </div>
+
+  </div>
+</div>
