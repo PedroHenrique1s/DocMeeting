@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common'; 
 import { FormsModule } from '@angular/forms'; 
-import { GeminiService } from '../../../services/gemini';
+import { GeminiService } from '../../services/gemini';
 
 @Component({
   selector: 'app-upload-arquivo',

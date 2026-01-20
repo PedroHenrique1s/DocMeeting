@@ -1,4 +1,9 @@
 // =========================================
+// 0. IMPORTAÇÃO OBRIGATÓRIA (Sempre na linha 1)
+// =========================================
+@use 'sass:color';
+
+// =========================================
 // 1. VARIÁVEIS & MIXINS
 // =========================================
 $primary-color: #2c3e50;
@@ -9,8 +14,8 @@ $warning-bg: #fff3cd;
 $text-color: #333333;
 $bg-light: #f4f7f6;
 $border-radius: 8px;
-$shadow-sm: 0 2px 5px rgba(0,0,0,0.05);
-$shadow-md: 0 5px 15px rgba(0,0,0,0.1);
+$shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 5px 15px rgba(0, 0, 0, 0.1);
 $transition: all 0.3s ease;
 
 @mixin flex-center {
@@ -24,7 +29,7 @@ $transition: all 0.3s ease;
   border-radius: $border-radius;
   box-shadow: $shadow-sm;
   padding: 1.5rem;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 @mixin btn-base {
@@ -37,9 +42,15 @@ $transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  
-  &:hover { transform: translateY(-2px); box-shadow: $shadow-sm; }
-  &:active { transform: translateY(0); }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-sm;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 // =========================================
@@ -47,12 +58,15 @@ $transition: all 0.3s ease;
 // =========================================
 .upload-section {
   margin-bottom: 2rem;
-  input[type="file"] { display: none; }
+
+  input[type="file"] {
+    display: none;
+  }
 
   .custom-file-upload {
     @include card;
     @include flex-center;
-    border: 2px dashed lighten($accent-color, 20%);
+    border: 2px dashed color.adjust($accent-color, $lightness: 20%);
     color: $accent-color;
     font-size: 1.1rem;
     font-weight: bold;
@@ -62,7 +76,7 @@ $transition: all 0.3s ease;
     transition: $transition;
 
     &:hover {
-      background-color: lighten($accent-color, 45%);
+      background-color: color.adjust($accent-color, $lightness: 45%);
       border-color: $accent-color;
     }
 
@@ -88,15 +102,17 @@ $transition: all 0.3s ease;
     width: 100%;
     border-collapse: collapse;
 
-    th, td {
+    th,
+    td {
       padding: 1.2rem 1.5rem;
       text-align: left;
-      vertical-align: middle; 
+      vertical-align: middle;
     }
 
     thead {
       background-color: #f8f9fa;
       border-bottom: 2px solid #eee;
+
       th {
         color: $primary-color;
         font-weight: 700;
@@ -108,20 +124,46 @@ $transition: all 0.3s ease;
 
     tbody tr {
       border-bottom: 1px solid #eee;
-      &:last-child { border-bottom: none; }
-      &:hover { background-color: #fafafa; }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background-color: #fafafa;
+      }
     }
 
-    th:nth-child(1), td:nth-child(1) { width: 20%; min-width: 180px; } 
-    th:nth-child(2), td:nth-child(2) { width: auto; } 
-    th:nth-child(3), td:nth-child(3) { width: 180px; min-width: 180px; text-align: center; white-space: nowrap; } 
-    th:nth-child(4), td:nth-child(4) { width: 120px; text-align: center; } 
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 20%;
+      min-width: 180px;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: auto;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 180px;
+      min-width: 180px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 120px;
+      text-align: center;
+    }
   }
 }
 
 .badge {
-  background-color: lighten($accent-color, 42%);
-  color: darken($accent-color, 15%);
+  background-color: color.adjust($accent-color, $lightness: 42%);
+  color: color.adjust($accent-color, $lightness: -15%);
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -148,11 +190,23 @@ $transition: all 0.3s ease;
     align-items: center;
     justify-content: center;
 
-    &.btn-view { color: #555; }
-    &.btn-view:hover { background-color: lighten($accent-color, 40%); color: $accent-color; }
-    
-    &.btn-delete { color: #555; }
-    &.btn-delete:hover { background-color: lighten($danger-color, 40%); color: $danger-color; }
+    &.btn-view {
+      color: #555;
+    }
+
+    &.btn-view:hover {
+      background-color: color.adjust($accent-color, $lightness: 40%);
+      color: $accent-color;
+    }
+
+    &.btn-delete {
+      color: #555;
+    }
+
+    &.btn-delete:hover {
+      background-color: color.adjust($danger-color, $lightness: 40%);
+      color: $danger-color;
+    }
   }
 }
 
@@ -161,10 +215,17 @@ $transition: all 0.3s ease;
 // =========================================
 .modal-backdrop {
   position: fixed;
-  top: 0; left: 0; 
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+
+  // --- CORREÇÃO SAFARI/iOS ---
+  -webkit-backdrop-filter: blur(3px); // Essencial para iPhone/Mac
   backdrop-filter: blur(3px);
+  // ---------------------------
+
   @include flex-center;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
@@ -188,16 +249,19 @@ $transition: all 0.3s ease;
     justify-content: space-between;
     align-items: center;
 
-    // --- NOVO: Agrupa Título e Botão de Editar ---
     .header-title {
       display: flex;
       align-items: center;
-      gap: 1rem; // Espaço entre o título e o botão
+      gap: 1rem;
 
-      h2 { margin: 0; font-size: 1.4rem; color: $primary-color; font-weight: 700; }
+      h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        color: $primary-color;
+        font-weight: 700;
+      }
     }
 
-    // --- NOVO: Botão de Editar ---
     .btn-icon-edit {
       background: white;
       border: 1px solid #ddd;
@@ -221,9 +285,16 @@ $transition: all 0.3s ease;
     }
 
     .close-btn {
-      background: none; border: none; font-size: 2rem; cursor: pointer; color: #ccc;
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #ccc;
       transition: color 0.2s;
-      &:hover { color: $danger-color; }
+
+      &:hover {
+        color: $danger-color;
+      }
     }
   }
 
@@ -238,20 +309,29 @@ $transition: all 0.3s ease;
   }
 }
 
-.btn-primary { 
-  @include btn-base; 
-  background-color: $accent-color; 
-  color: white; 
+.btn-primary {
+  @include btn-base;
+  background-color: $accent-color;
+  color: white;
   box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
-  &:hover { background-color: darken($accent-color, 8%); transform: translateY(-1px); }
+
+  &:hover {
+    background-color: color.adjust($accent-color, $lightness: -8%);
+    transform: translateY(-1px);
+  }
 }
 
-.btn-secondary { 
-  @include btn-base; 
-  background-color: white; 
-  color: #7f8c8d; 
+.btn-secondary {
+  @include btn-base;
+  background-color: white;
+  color: #7f8c8d;
   border: 1px solid #dfe6e9;
-  &:hover { background-color: #f8f9fa; color: #2c3e50; border-color: #bdc3c7; }
+
+  &:hover {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    border-color: #bdc3c7;
+  }
 }
 
 // =========================================
@@ -272,6 +352,7 @@ $transition: all 0.3s ease;
       padding-bottom: 0.8rem;
       margin-top: 0;
     }
+
     h3 {
       color: $primary-color;
       margin-top: 2rem;
@@ -281,7 +362,7 @@ $transition: all 0.3s ease;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      
+
       &::before {
         content: '';
         display: inline-block;
@@ -291,15 +372,17 @@ $transition: all 0.3s ease;
         border-radius: 2px;
       }
     }
+
     ul {
       list-style: none;
       padding: 0;
       margin-bottom: 1.5rem;
-      
+
       li {
         position: relative;
         padding-left: 1.5rem;
         margin-bottom: 0.8rem;
+
         &::before {
           content: '•';
           color: $accent-color;
@@ -309,9 +392,14 @@ $transition: all 0.3s ease;
           font-size: 1.2rem;
           line-height: 1.2rem;
         }
-        strong { color: #2c3e50; font-weight: 600; }
+
+        strong {
+          color: #2c3e50;
+          font-weight: 600;
+        }
       }
     }
+
     hr {
       border: 0;
       border-top: 1px solid #eee;
@@ -330,12 +418,12 @@ $transition: all 0.3s ease;
 
   .edit-hint {
     font-size: 0.85rem;
-    color: darken($warning-bg, 50%);
+    color: color.adjust($warning-bg, $lightness: -50%);
     background-color: $warning-bg;
     padding: 8px 12px;
     border-radius: 6px;
     margin-bottom: 1rem;
-    border: 1px solid darken($warning-bg, 10%);
+    border: 1px solid color.adjust($warning-bg, $lightness: -10%);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -344,9 +432,9 @@ $transition: all 0.3s ease;
 
 .editor-textarea {
   width: 100%;
-  min-height: 400px; /* Altura boa para ver o HTML */
+  min-height: 400px;
   padding: 1.5rem;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace; /* Fonte monoespaçada */
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 0.95rem;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -367,21 +455,45 @@ $transition: all 0.3s ease;
 // =========================================
 // 6. ANIMAÇÕES & RESPONSIVIDADE
 // =========================================
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @media (max-width: 768px) {
   .table-container {
     border-radius: 8px;
-    overflow-x: auto; 
-    table { min-width: 800px; }
+    overflow-x: auto;
+
+    table {
+      min-width: 800px;
+    }
   }
 
   .modal-content {
-    width: 100%; height: 100%; max-height: 100%; border-radius: 0;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
   }
-  
-  // No mobile, o botão de editar pode ficar abaixo do título
+
   .modal-header .header-title {
     flex-direction: column;
     align-items: flex-start;
