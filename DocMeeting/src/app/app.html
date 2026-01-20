@@ -1,44 +1,70 @@
 <div class="container">
-  
-  <header class="hero">
-    <div class="badge-new">✨ Nova Versão com IA Gemini</div>
-    <h1>DocMeeting 📄</h1>
-    <p class="subtitle">
-      Transforme gravações caóticas em <strong>atas profissionais</strong> em segundos. 
-      <br>O fim das anotações manuais nas suas Daily Scrums e reuniões.
-    </p>
-  </header>
 
-  <section class="benefits-grid">
-    <div class="benefit-card">
-      <div class="icon">🚀</div>
-      <h3>Economize Horas</h3>
-      <p>Pare de reassistir vídeos de 1 hora. Receba o resumo e os pontos de ação instantaneamente.</p>
+  <div class="top-bar">
+    <div class="brand">
+      <h2 class="logo-text">DocMeeting 📄</h2> <span class="badge-new">✨ IA Gemini</span>
     </div>
 
-    <div class="benefit-card">
-      <div class="icon">🧠</div>
-      <h3>IA Inteligente</h3>
-      <p>Nossa IA entende o contexto, identifica tarefas e separa o que é importante do ruído.</p>
+    <div class="auth-area">
+      @if (currentUser$ | async; as user) {
+         <div class="user-info">
+             <span class="welcome-text">Olá, {{ user.user_metadata['full_name']?.split(' ')[0] }}</span>
+             <div class="credit-badge" [class.zero]="credits === 0">💎 {{ credits }}</div>
+             <button (click)="logout()" class="btn-logout">🚪</button>
+          </div>
+      } @else {
+        <div class="auth-buttons">
+          <button (click)="loginEmail()" class="btn-email">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            Entrar com E-mail
+          </button>
+          <button (click)="loginGoogle()" class="btn-google">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G" width="18">
+            Google
+          </button>
+        </div>
+      }
     </div>
-
-    <div class="benefit-card">
-      <div class="icon">📂</div>
-      <h3>Tudo Organizado</h3>
-      <p>Mantenha um histórico pesquisável de todas as suas decisões de projeto em um só lugar.</p>
-    </div>
-  </section>
-
-  <div class="app-wrapper">
-    <div class="divider">
-      <span>Experimente Agora</span>
-    </div>
-    
-    <app-upload-arquivo></app-upload-arquivo>
   </div>
 
+  <main class="main-content">
+    
+    <header class="hero">
+      <h1 class="headline">
+        Suas reuniões,<br> 
+        <span class="highlight">transformadas em ação.</span>
+      </h1>
+      <p class="subtitle">
+        Gere atas automáticas, identifique tarefas e economize horas da sua equipe com Inteligência Artificial.
+      </p>
+    </header>
+
+    <div class="action-area">
+      <app-upload-arquivo></app-upload-arquivo>
+    </div>
+
+    <section class="benefits-grid">
+      <div class="benefit-card">
+        <div class="icon">🚀</div>
+        <h3>Economize Horas</h3>
+        <p>Resumos instantâneos de vídeos longos.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="icon">🧠</div>
+        <h3>IA Inteligente</h3>
+        <p>Separa o sinal do ruído automaticamente.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="icon">📂</div>
+        <h3>Organizado</h3>
+        <p>Histórico pesquisável de decisões.</p>
+      </div>
+    </section>
+
+  </main>
+
   <footer>
-    <p>© 2026 DocMeeting SaaS. Todos os direitos reservados.</p>
+    <p>© 2026 DocMeeting SaaS.</p>
   </footer>
 
 </div>
