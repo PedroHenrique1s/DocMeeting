@@ -1,7 +1,10 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common'; 
 import { FormsModule } from '@angular/forms'; 
 import { GeminiService } from '../../services/gemini';
+import { AuthService } from '../../services/auth'; //
+import { Subscription } from 'rxjs';
+import { Notification } from '../../services/notification';
 
 @Component({
   selector: 'app-upload-arquivo',
@@ -10,22 +13,57 @@ import { GeminiService } from '../../services/gemini';
   templateUrl: './upload-arquivo.html',
   styleUrl: './upload-arquivo.scss',
 })
-export class UploadArquivo {
+export class UploadArquivo implements OnInit, OnDestroy {
   isLoading = false;
+  isLoggedIn = false; // Controle de login
   meetings: any[] = [];
   selectedMeeting: any = null;
   
-  // Controles de Edição
   isEditing = false;
   showHtmlCode = false;
 
+  private _userSub!: Subscription;
+
   @ViewChild('visualEditor') visualEditor!: ElementRef;
 
-  constructor(private geminiService: GeminiService) {}
+  // Injeção via construtor conforme sua preferência
+  constructor(
+    private geminiService: GeminiService,
+    private _authService: AuthService, //
+    private _notify: Notification //
+  ) {}
+
+  ngOnInit() {
+    // Monitora se o usuário está logado
+    this._userSub = this._authService.user$.subscribe(user => {
+      this.isLoggedIn = !!user; //
+    });
+  }
+
+  ngOnDestroy() {
+    if (this._userSub) this._userSub.unsubscribe();
+  }
 
   async onFileSelected(event: any) {
     const file = event.target.files[0];
     if (!file) return;
+
+    // 1. Validação de Login
+    if (!this.isLoggedIn) {
+      this._notify.show('Você precisa estar logado para processar arquivos.', 'error'); //
+      event.target.value = '';
+      return;
+    }
+
+    // 2. Validação de Extensão
+    const allowedExtensions = ['mp3', 'mp4', 'txt'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    if (!extension || !allowedExtensions.includes(extension)) {
+      this._notify.show('Formato inválido! Use apenas MP3, MP4 ou TXT.', 'error'); //
+      event.target.value = '';
+      return;
+    }
 
     this.isLoading = true;
 
@@ -42,8 +80,9 @@ export class UploadArquivo {
       };
 
       this.meetings.unshift(newMeeting);
+      this._notify.show('Ata gerada com sucesso pela IA!', 'success'); //
     } catch (error) {
-      alert('Erro ao processar arquivo. Verifique o console.');
+      this._notify.show('Erro ao processar arquivo com a IA Gemini.', 'error'); //
       console.error(error);
     } finally {
       this.isLoading = false;
@@ -62,6 +101,7 @@ export class UploadArquivo {
     if (this.selectedMeeting && this.selectedMeeting.id === id) {
       this.closeModal();
     }
+    this._notify.show('Reunião excluída.', 'info'); //
   }
 
   closeModal() {
@@ -72,21 +112,17 @@ export class UploadArquivo {
 
   toggleEdit() {
     this.isEditing = !this.isEditing;
-
     if (this.isEditing) {
       setTimeout(() => {
         if (this.visualEditor) {
           this.visualEditor.nativeElement.innerHTML = this.selectedMeeting.fullContent;
         }
       }, 0);
-    } else {
-      this.showHtmlCode = false;
     }
   }
 
   toggleSourceCode() {
     this.showHtmlCode = !this.showHtmlCode;
-
     if (!this.showHtmlCode && this.isEditing) {
       setTimeout(() => {
         if (this.visualEditor) {
@@ -101,26 +137,21 @@ export class UploadArquivo {
   }
 
   saveEdit() {
-    console.log('Conteúdo salvo:', this.selectedMeeting.fullContent);
+    this._notify.show('Alterações salvas localmente.', 'success'); //
     this.isEditing = false;
     this.showHtmlCode = false;
   }
 
-  // --- UTILITÁRIOS ---
-
   copyContent() {
-    const tempElement = document.createElement("textarea");
-    tempElement.value = this.selectedMeeting.fullContent.replace(/<[^>]*>?/gm, ''); 
-    document.body.appendChild(tempElement);
-    tempElement.select();
-    document.execCommand("copy");
-    document.body.removeChild(tempElement);
-    alert('Conteúdo copiado!');
+    const plainText = this.selectedMeeting.fullContent.replace(/<[^>]*>?/gm, ''); 
+    navigator.clipboard.writeText(plainText).then(() => {
+      this._notify.show('Texto copiado para a área de transferência!', 'info'); //
+    });
   }
 
   sendEmail() {
     const subject = encodeURIComponent(`Ata: ${this.selectedMeeting.category}`);
-    const body = encodeURIComponent(`Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa em anexo)`);
+    const body = encodeURIComponent(`Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa disponível no sistema)`);
     window.open(`mailto:?subject=${subject}&body=${body}`);
   }
 }

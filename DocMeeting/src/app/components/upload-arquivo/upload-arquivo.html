@@ -1,17 +1,24 @@
 <div class="upload-section">
-  <label for="fileInput" class="custom-file-upload" [class.disabled]="isLoading">
+  <label 
+    for="fileInput" 
+    class="custom-file-upload" 
+    [class.disabled]="isLoading || !isLoggedIn"
+  >
     @if (isLoading) {
       <span>⏳ Processando áudio e gerando ata... aguarde</span>
+    } @else if (!isLoggedIn) {
+      <span>🔒 Faça login para enviar arquivos</span>
     } @else {
       <span>📂 Selecionar Arquivo (MP3, MP4, TXT)</span>
     }
   </label>
+  
   <input 
     id="fileInput" 
     type="file" 
     accept=".mp3, .mp4, .txt" 
     (change)="onFileSelected($event)" 
-    [disabled]="isLoading"
+    [disabled]="isLoading || !isLoggedIn"
   />
 </div>
 

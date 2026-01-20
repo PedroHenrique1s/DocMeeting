@@ -75,17 +75,19 @@ $transition: all 0.3s ease;
     background: white;
     transition: $transition;
 
-    &:hover {
-      background-color: color.adjust($accent-color, $lightness: 45%);
-      border-color: $accent-color;
-    }
-
     &.disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      background-color: #fafafa;
-      color: #999;
+      opacity: 0.6; // Reduz a opacidade para parecer inativo
+      cursor: not-allowed; // Muda o cursor para indicar bloqueio
+      background-color: #f5f5f5;
       border-color: #ddd;
+      color: #999;
+      
+      // Remove os efeitos de hover quando estiver desativado
+      &:hover {
+        background-color: #f5f5f5; 
+        border-color: #ddd;
+        transform: none; // Evita que o botão "suba" no hover
+      }
     }
   }
 }
@@ -388,7 +390,6 @@ $transition: all 0.3s ease;
         font-weight: 700;
       }
 
-      // Remove margem do último parágrafo dentro do blockquote
       p:last-child {
         margin-bottom: 0;
       }
@@ -425,6 +426,18 @@ $transition: all 0.3s ease;
       border: 0;
       border-top: 1px solid #eee;
       margin: 2.5rem 0;
+    }
+
+    .document-render {
+      width: 100%;
+      display: block;
+      
+      overflow-wrap: break-word; 
+      
+      h1, h2 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
     }
   }
 }
