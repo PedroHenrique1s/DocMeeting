@@ -1,14 +1,115 @@
-/* You can add global styles to this file, and also import other style files */
+/* =========================================
+   1. FUNDAÇÃO E RESET (Baseado no seu código)
+   ========================================= */
 /* src/styles.scss */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden; /* O SEGREDO: Impede o scroll do navegador */
+  overflow-y: auto; /* MUDANÇA: Permite o scroll vertical */
+  overflow-x: hidden; /* Mantém o bloqueio horizontal para evitar quebras */
   box-sizing: border-box;
 }
 
 *, *:before, *:after {
   box-sizing: inherit;
+}
+
+/* =========================================
+   2. VARIÁVEIS GLOBAIS (Tokens de Design)
+   ========================================= */
+:root {
+  --primary-color: #2c3e50;
+  --accent-color: #3498db;
+  --success-color: #27ae60;
+  --danger-color: #c0392b;
+  --warning-color: #f39c12;
+  --bg-light: #f8f9fa;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --border-radius: 8px;
+  --transition-fast: all 0.2s ease;
+}
+
+/* =========================================
+   3. ESTILIZAÇÃO DO TOAST (Sistema de Notificação)
+   ========================================= */
+// Como o Toast é injetado na raiz do App, o estilo global garante a exibição correta.
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  min-width: 320px;
+  padding: 1rem 1.2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 9999; // Sempre acima de modais
+  cursor: pointer;
+  border-left: 6px solid var(--primary-color);
+  animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  &.success { border-left-color: var(--success-color); }
+  &.error { border-left-color: var(--danger-color); }
+  &.info { border-left-color: var(--accent-color); }
+
+  p {
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-main);
+  }
+
+  .close-hint {
+    margin-left: auto;
+    color: #ccc;
+    font-size: 1.2rem;
+  }
+}
+
+/* =========================================
+   4. UTILITÁRIOS PARA O EDITOR (contenteditable)
+   ========================================= */
+// Garante que o conteúdo injetado pela IA tenha margens padrão no modal
+.document-render, .visual-editor {
+  h1, h2, h3 { margin-top: 1.5em; margin-bottom: 0.5em; }
+  p { margin-bottom: 1em; }
+  ul, ol { margin-bottom: 1em; padding-left: 1.5em; }
+}
+
+/* =========================================
+   5. ANIMAÇÕES GLOBAIS
+   ========================================= */
+@keyframes toastIn {
+  from { transform: translateX(100%) scale(0.9); opacity: 0; }
+  to { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* =========================================
+   6. SCROLLBAR CUSTOMIZADA (Opcional - SaaS Style)
+   ========================================= */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+  &:hover { background: #bbb; }
 }

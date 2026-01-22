@@ -2,16 +2,17 @@
 
   <div class="top-bar">
     <div class="brand">
-      <h2 class="logo-text">DocMeeting 📄</h2> <span class="badge-new">✨ IA Gemini</span>
+      <h2 class="logo-text">DocMeeting 📄</h2> 
+      <span class="badge-new">✨ IA Agent</span>
     </div>
 
     <div class="auth-area">
       @if (currentUser$ | async; as user) {
-         <div class="user-info">
-             <span class="welcome-text">Olá, {{ user.user_metadata['full_name']?.split(' ')[0] }}</span>
-             <div class="credit-badge" [class.zero]="credits === 0">💎 {{ credits }}</div>
-             <button (click)="logout()" class="btn-logout">🚪</button>
-          </div>
+          <div class="user-info">
+              <span class="welcome-text">Olá, {{ user.user_metadata['full_name']?.split(' ')[0] }}</span>
+              <div class="credit-badge" [class.zero]="credits === 0">💎 {{ credits }}</div>
+              <button (click)="logout()" class="btn-logout" title="Sair">🚪</button>
+           </div>
       } @else {
         <div class="auth-buttons">
           <button (click)="loginEmail()" class="btn-email">
@@ -19,7 +20,7 @@
             Entrar com E-mail
           </button>
           <button (click)="loginGoogle()" class="btn-google">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G" width="18">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="18">
             Google
           </button>
         </div>
@@ -43,21 +44,70 @@
       <app-upload-arquivo></app-upload-arquivo>
     </div>
 
-    <section class="benefits-grid">
-      <div class="benefit-card">
-        <div class="icon">🚀</div>
-        <h3>Economize Horas</h3>
-        <p>Resumos instantâneos de vídeos longos.</p>
+    <section class="section-container">
+      <div class="section-header">
+        <h2>Produtividade máxima para sua equipe</h2>
+        <p>Tudo o que você precisa para gerenciar decisões em um só lugar.</p>
       </div>
-      <div class="benefit-card">
-        <div class="icon">🧠</div>
-        <h3>IA Inteligente</h3>
-        <p>Separa o sinal do ruído automaticamente.</p>
+
+      <div class="benefits-grid">
+        <div class="benefit-card border-blue">
+          <div class="icon">🚀</div>
+          <h3>Economize Horas</h3>
+          <p>Resumos instantâneos de vídeos e áudios longos, extraindo pontos chave sem esforço.</p>
+        </div>
+        <div class="benefit-card border-green">
+          <div class="icon">🧠</div>
+          <h3>IA Inteligente</h3>
+          <p>Nossa IA identifica automaticamente tarefas, responsáveis e impedimentos reportados.</p>
+        </div>
+        <div class="benefit-card border-purple">
+          <div class="icon">📂</div>
+          <h3>Histórico Seguro</h3>
+          <p>Mantenha um histórico pesquisável de todas as decisões tomadas em reuniões passadas.</p>
+        </div>
       </div>
-      <div class="benefit-card">
-        <div class="icon">📂</div>
-        <h3>Organizado</h3>
-        <p>Histórico pesquisável de decisões.</p>
+    </section>
+
+    <section class="section-container showcase-section">
+      <div class="section-header">
+        <h2>Controle total sobre o conteúdo</h2>
+        <p>Visualize as funcionalidades de edição visual, código e distribuição por e-mail.</p>
+      </div>
+
+      <div class="showcase-grid">
+        <div class="showcase-card border-orange">
+          <span class="badge-label">Modo Visual ✨</span>
+          <div class="showcase-image-container">
+            <img src="preview-edit.png" alt="Edição Visual" class="preview-img">
+          </div>
+          <div class="showcase-info">
+            <h3>Edição Flexível</h3>
+            <p>Altere o texto da ata diretamente em uma interface intuitiva e prática.</p>
+          </div>
+        </div>
+
+        <div class="showcase-card border-purple">
+          <span class="badge-label">Modo Código 💻</span>
+          <div class="showcase-image-container">
+            <img src="preview-code.png" alt="Modo Código" class="preview-img">
+          </div>
+          <div class="showcase-info">
+            <h3>HTML Customizável</h3>
+            <p>Ajuste o código-fonte para personalizações avançadas de formatação.</p>
+          </div>
+        </div>
+
+        <div class="showcase-card border-green">
+          <span class="badge-label">E-mail Pronto 📧</span>
+          <div class="showcase-image-container">
+            <img src="preview-email.png" alt="Envio de E-mail" class="preview-img">
+          </div>
+          <div class="showcase-info">
+            <h3>Distribuição Ágil</h3>
+            <p>Encaminhe o resultado formatado profissionalmente para toda a equipe.</p>
+          </div>
+        </div>
       </div>
     </section>
 
