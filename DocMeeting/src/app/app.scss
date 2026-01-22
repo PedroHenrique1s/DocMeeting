@@ -64,8 +64,8 @@ $card-bg: #ffffff;
     
     .badge-new {
       font-size: 0.7rem;
-      background: rgba($accent-color, 0.1);
-      color: $accent-color;
+      background: rgba($purple-color, 0.1);
+      color: $purple-color;
       padding: 4px 12px;
       border-radius: 20px;
       font-weight: 700;
@@ -164,7 +164,7 @@ $card-bg: #ffffff;
     letter-spacing: -0.04em;
     color: $primary-color;
     margin-bottom: 1.5rem;
-    .highlight { color: $accent-color; }
+    .highlight { color: $purple-color; }
   }
   .subtitle {
     font-size: 1.25rem;
