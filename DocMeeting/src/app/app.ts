@@ -31,6 +31,12 @@ export class App {
     });
   }
 
+  ngOnInit() {
+    this.authService.credits$.subscribe((val) => {
+      this.credits = val; 
+    });
+  }
+
   loginGoogle() {
     this.authService.signInWithGoogle();
   }

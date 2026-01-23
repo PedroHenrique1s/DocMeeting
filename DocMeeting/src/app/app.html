@@ -10,7 +10,9 @@
       @if (currentUser$ | async; as user) {
           <div class="user-info">
               <span class="welcome-text">Olá, {{ user.user_metadata['full_name']?.split(' ')[0] }}</span>
-              <div class="credit-badge" [class.zero]="credits === 0">💎 {{ credits }}</div>
+              <div class="credit-badge" [class.zero]="credits === 0">
+                💎 <span class="credit-count">{{ credits }}</span>
+              </div>
               <button (click)="logout()" class="btn-logout" title="Sair">🚪</button>
            </div>
       } @else {
