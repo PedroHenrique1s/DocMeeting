@@ -4,10 +4,11 @@ import { AuthService } from './services/auth';
 import { UploadArquivo } from './components/upload-arquivo/upload-arquivo';
 import { AuthModal } from './components/auth-modal/auth-modal';
 import { Toast } from './components/toast/toast';
+import { DynamicModal } from './components/dynamic-modal/dynamic-modal';
 
 @Component({
   selector: 'app-root',
-  imports: [UploadArquivo, CommonModule, AuthModal, Toast],
+  imports: [UploadArquivo, CommonModule, AuthModal, Toast, DynamicModal],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
