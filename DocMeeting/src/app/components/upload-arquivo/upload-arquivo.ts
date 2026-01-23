@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth'; //
 import { Subscription } from 'rxjs';
 import { Notification } from '../../services/notification';
 import { Meetings } from '../../services/meetings';
+import { DynamicModalService } from '../../services/dynamic-modal';
 
 @Component({
   selector: 'app-upload-arquivo',
@@ -34,6 +35,7 @@ export class UploadArquivo implements OnInit, OnDestroy {
     private _authService: AuthService, //
     private _notify: Notification, //
     private _meeting: Meetings,
+    private _modalService: DynamicModalService
   ) {}
 
   ngOnInit() {
@@ -146,12 +148,30 @@ export class UploadArquivo implements OnInit, OnDestroy {
   }
 
   //Deleta a Ata
-  protected async deleteMeeting(id: any): Promise<void> {
-    const confirmacao = window.confirm(
-      'Tem certeza que deseja excluir esta ata permanentemente?',
-    );
-    if (!confirmacao) return;
+  protected deleteMeeting(id: any): void {
+    // Abre o modal personalizado
+    this._modalService.open({
+      title: 'Excluir Ata',
+      message: 'Tem certeza que deseja excluir esta ata permanentemente? Esta ação não pode ser desfeita.',
+      buttons: [
+        {
+          label: 'Cancelar',
+          cssClass: 'btn-secondary',
+          action: () => this._modalService.close() // Apenas fecha
+        },
+        {
+          label: 'Sim, Excluir',
+          cssClass: 'btn-danger',
+          action: () => {
+            this._modalService.close(); // Fecha o modal
+            this.executeDelete(id);     // Chama a rotina que vai no banco
+          }
+        }
+      ]
+    });
+  }
 
+  private async executeDelete(id: any): Promise<void> {
     this.isLoading = true;
 
     try {
@@ -216,9 +236,32 @@ export class UploadArquivo implements OnInit, OnDestroy {
   }
 
   //Salva alterçaõ da Ata 
-  protected async saveEdit(): Promise<void> {
+  protected saveEdit(): void {
     if (!this.selectedMeeting) return;
 
+    // Chama o Modal Global para confirmar a ação
+    this._modalService.open({
+      title: 'Confirmar Alterações',
+      message: 'Tem a certeza que deseja guardar as alterações e sobrescrever a ata original? Esta ação não pode ser desfeita.',
+      buttons: [
+        {
+          label: 'Cancelar',
+          cssClass: 'btn-secondary',
+          action: () => this._modalService.close() 
+        },
+        {
+          label: 'Sim, Guardar',
+          cssClass: 'btn-primary', 
+          action: () => {
+            this._modalService.close(); 
+            this.executeSaveEdit();     
+          }
+        }
+      ]
+    });
+  }
+
+  private async executeSaveEdit(): Promise<void> {
     this.isLoading = true;
 
     try {
@@ -243,17 +286,17 @@ export class UploadArquivo implements OnInit, OnDestroy {
           this.meetings[index].full_content = this.selectedMeeting.full_content;
         }
 
-        this._notify.show('Alterações salvas no banco com sucesso!', 'success');
+        this._notify.show('Alterações guardadas no banco com sucesso!', 'success');
         this.isEditing = false;
         this.showHtmlCode = false;
       } else {
         console.warn('Update enviado, mas sem retorno.');
-        this._notify.show('Salvo, mas sem confirmação de retorno.');
+        this._notify.show('Guardado, mas sem confirmação de retorno.');
       }
     } catch (err: any) {
       console.error(err);
       this._notify.show(
-        'Erro ao salvar: ' + (err.message || 'Erro desconhecido'),
+        'Erro ao guardar: ' + (err.message || 'Erro desconhecido'),
         'error',
       );
     } finally {
@@ -263,10 +306,34 @@ export class UploadArquivo implements OnInit, OnDestroy {
 
   //Envio do Email
   protected sendEmail(): void {
+    if (!this.selectedMeeting) return;
+    this._modalService.open({
+      title: 'Enviar por E-mail',
+      message: `Deseja abrir o seu programa de e-mail padrão para enviar o resumo da ata "${this.selectedMeeting.category}"?`,
+      buttons: [
+        {
+          label: 'Cancelar',
+          cssClass: 'btn-secondary',
+          action: () => this._modalService.close()
+        },
+        {
+          label: 'Sim, Abrir E-mail',
+          cssClass: 'btn-primary', 
+          action: () => {
+            this._modalService.close(); 
+            this.executeSendEmail();    
+          }
+        }
+      ]
+    });
+  }
+
+  private executeSendEmail(): void {
     const subject = encodeURIComponent(`Ata: ${this.selectedMeeting.category}`);
     const body = encodeURIComponent(
-      `Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa disponível no sistema)`,
+      `Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa disponível no sistema)`
     );
+    
     window.open(`mailto:?subject=${subject}&body=${body}`);
   }
 

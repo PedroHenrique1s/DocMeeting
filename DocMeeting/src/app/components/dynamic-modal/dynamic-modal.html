@@ -1,0 +1,33 @@
+@if (modalState$ | async; as state) {
+  
+  @if (state.isOpen && state.config) {
+    
+    <div class="modal-overlay">
+      <div class="modal-content">
+        
+        <div class="modal-header">
+          <h3 class="modal-title">{{ state.config.title }}</h3>
+          <button class="btn-close" (click)="modalService.close()" aria-label="Fechar">
+            &times;
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p>{{ state.config.message }}</p>
+        </div>
+
+        <div class="modal-footer">
+          
+          @for (btn of state.config.buttons; track btn.label) {
+            <button 
+              class="btn {{ btn.cssClass || 'btn-primary' }}"
+              (click)="onButtonClick(btn.action)">
+              {{ btn.label }}
+            </button>
+          }
+        </div>
+
+      </div>
+    </div>
+  }
+}
