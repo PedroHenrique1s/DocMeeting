@@ -5,6 +5,7 @@ import { GeminiService } from '../../services/gemini';
 import { AuthService } from '../../services/auth'; //
 import { Subscription } from 'rxjs';
 import { Notification } from '../../services/notification';
+import { Meetings } from '../../services/meetings';
 
 @Component({
   selector: 'app-upload-arquivo',
@@ -14,29 +15,43 @@ import { Notification } from '../../services/notification';
   styleUrl: './upload-arquivo.scss',
 })
 export class UploadArquivo implements OnInit, OnDestroy {
-  isLoading = false;
-  isLoggedIn = false; // Controle de login
-  meetings: any[] = [];
-  selectedMeeting: any = null;
+  protected meetings:        any[] = [];
+  protected selectedMeeting: any   = null;
   
-  isEditing = false;
-  showHtmlCode = false;
+  protected isLoading    = false;
+  protected isLoggedIn   = false; 
+  protected isEditing    = false;
+  protected showHtmlCode = false;
+  protected credits      = 0;
 
   private _userSub!: Subscription;
+  private _userId: string | null = null;
 
-  @ViewChild('visualEditor') visualEditor!: ElementRef;
+  @ViewChild('visualEditor') protected visualEditor!: ElementRef;
 
-  // Injeção via construtor conforme sua preferência
   constructor(
     private geminiService: GeminiService,
     private _authService: AuthService, //
-    private _notify: Notification //
+    private _notify: Notification, //
+    private _meeting: Meetings,
   ) {}
 
   ngOnInit() {
-    // Monitora se o usuário está logado
-    this._userSub = this._authService.user$.subscribe(user => {
-      this.isLoggedIn = !!user; //
+    this._userSub = this._authService.user$.subscribe((user) => {
+      this.isLoggedIn = !!user;
+      this._userId = user?.id || null;
+
+      if (this.isLoggedIn && this._userId) {
+        this.loadMeetings();
+      } else {
+        this.meetings = [];
+      }
+    });
+
+    // 2. ADICIONE ISTO: Sincroniza os créditos do componente com o serviço
+    this._authService.credits$.subscribe((valorReal) => {
+      this.credits = valorReal;
+      console.log('Saldo sincronizado para o upload:', this.credits);
     });
   }
 
@@ -44,23 +59,30 @@ export class UploadArquivo implements OnInit, OnDestroy {
     if (this._userSub) this._userSub.unsubscribe();
   }
 
-  async onFileSelected(event: any) {
+  //Função principal do Upload de arquivos
+  protected async onFileSelected(event: any): Promise<void> {
     const file = event.target.files[0];
     if (!file) return;
 
-    // 1. Validação de Login
     if (!this.isLoggedIn) {
-      this._notify.show('Você precisa estar logado para processar arquivos.', 'error'); //
+      this._notify.show('Você precisa estar logado.', 'error');
       event.target.value = '';
       return;
     }
 
-    // 2. Validação de Extensão
+    if (this.credits <= 0) {
+      this._notify.show(
+        'Você não possui créditos (💎 0). Adquira mais para continuar.',
+        'error',
+      );
+      event.target.value = '';
+      return;
+    }
+
     const allowedExtensions = ['mp3', 'mp4', 'txt'];
     const extension = file.name.split('.').pop()?.toLowerCase();
-
     if (!extension || !allowedExtensions.includes(extension)) {
-      this._notify.show('Formato inválido! Use apenas MP3, MP4 ou TXT.', 'error'); //
+      this._notify.show('Formato inválido!', 'error');
       event.target.value = '';
       return;
     }
@@ -71,18 +93,44 @@ export class UploadArquivo implements OnInit, OnDestroy {
       const arrayBuffer = await file.arrayBuffer();
       const result = await this.geminiService.analyzeMeeting(file, arrayBuffer);
 
-      const newMeeting = {
-        id: Date.now(),
+      const meetingData = {
+        user_id: this._userId,
+        title: file.name,
         category: result.category,
         summary: result.quickSummary,
-        fullContent: result.styledContent,
-        date: new Date()
+        full_content: result.styledContent,
+        created_at: new Date(),
       };
 
-      this.meetings.unshift(newMeeting);
-      this._notify.show('Ata gerada com sucesso pela IA!', 'success'); //
-    } catch (error) {
-      this._notify.show('Erro ao processar arquivo com a IA Gemini.', 'error'); //
+      const { data, error } = (await this._meeting.saveMeeting(
+        meetingData,
+      )) as any;
+
+      if (!error && data && data.length > 0) {
+        const consumiu = await this._authService.updateCredits(
+          this._userId!,
+          this.credits - 1,
+        );
+
+        if (consumiu) {
+          this.meetings.unshift({
+            ...meetingData,
+            id: data[0].id,
+          });
+
+          this._notify.show(
+            'Ata gerada e salva! 1 crédito consumido.',
+            'success',
+          );
+        }
+      } else {
+        throw new Error(error?.message || 'Falha ao salvar no banco de dados');
+      }
+    } catch (error: any) {
+      this._notify.show(
+        error.message || 'Erro ao processar com Gemini.',
+        'error',
+      );
       console.error(error);
     } finally {
       this.isLoading = false;
@@ -90,68 +138,163 @@ export class UploadArquivo implements OnInit, OnDestroy {
     }
   }
 
-  viewMeeting(meeting: any) {
+  //Visualização da ATA
+  protected viewMeeting(meeting: any): void {
     this.selectedMeeting = meeting;
-    this.isEditing = false;
-    this.showHtmlCode = false; 
-  }
-
-  deleteMeeting(id: number) {
-    this.meetings = this.meetings.filter(m => m.id !== id);
-    if (this.selectedMeeting && this.selectedMeeting.id === id) {
-      this.closeModal();
-    }
-    this._notify.show('Reunião excluída.', 'info'); //
-  }
-
-  closeModal() {
-    this.selectedMeeting = null;
-    this.isEditing = false;
-    this.showHtmlCode = false; 
-  }
-
-  toggleEdit() {
-    this.isEditing = !this.isEditing;
-    if (this.isEditing) {
-      setTimeout(() => {
-        if (this.visualEditor) {
-          this.visualEditor.nativeElement.innerHTML = this.selectedMeeting.fullContent;
-        }
-      }, 0);
-    }
-  }
-
-  toggleSourceCode() {
-    this.showHtmlCode = !this.showHtmlCode;
-    if (!this.showHtmlCode && this.isEditing) {
-      setTimeout(() => {
-        if (this.visualEditor) {
-          this.visualEditor.nativeElement.innerHTML = this.selectedMeeting.fullContent;
-        }
-      }, 0);
-    }
-  }
-
-  onVisualContentChange(event: any) {
-    this.selectedMeeting.fullContent = event.target.innerHTML;
-  }
-
-  saveEdit() {
-    this._notify.show('Alterações salvas localmente.', 'success'); //
     this.isEditing = false;
     this.showHtmlCode = false;
   }
 
-  copyContent() {
-    const plainText = this.selectedMeeting.fullContent.replace(/<[^>]*>?/gm, ''); 
+  //Deleta a Ata
+  protected async deleteMeeting(id: any): Promise<void> {
+    const confirmacao = window.confirm(
+      'Tem certeza que deseja excluir esta ata permanentemente?',
+    );
+    if (!confirmacao) return;
+
+    this.isLoading = true;
+
+    try {
+      const { error } = await this._meeting.deleteMeeting(id);
+
+      if (error) throw error;
+
+      this.meetings = this.meetings.filter((m) => m.id !== id);
+
+      if (this.selectedMeeting && this.selectedMeeting.id === id) {
+        this.closeModal();
+      }
+
+      this._notify.show('Ata excluída permanentemente.', 'success');
+    } catch (err) {
+      console.error(err);
+      this._notify.show('Erro ao excluir ata.', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  //Fecha a tela da ata
+  protected closeModal(): void {
+    this.selectedMeeting = null;
+    this.isEditing = false;
+    this.showHtmlCode = false;
+  }
+
+  //Visualiza apenas a Ata estilizada
+  
+  protected toggleEdit(): void {
+    this.isEditing = !this.isEditing;
+
+    if (this.isEditing) {
+      setTimeout(() => {
+        if (this.visualEditor) {
+          this.visualEditor.nativeElement.innerHTML =
+            this.selectedMeeting.full_content;
+        }
+      }, 0);
+    }
+  }
+
+  //Visualiza Código fonte em HTML
+  toggleSourceCode(): void {
+    this.showHtmlCode = !this.showHtmlCode;
+
+    if (!this.showHtmlCode && this.isEditing) {
+      setTimeout(() => {
+        if (this.visualEditor) {
+          this.visualEditor.nativeElement.innerHTML =
+            this.selectedMeeting.full_content;
+        }
+      }, 0);
+    }
+  }
+
+  //Falta a mudança do código fonte para código normal
+  onVisualContentChange(event: any): void {
+    this.selectedMeeting.full_content = event.target.innerHTML;
+  }
+
+  //Salva alterçaõ da Ata 
+  protected async saveEdit(): Promise<void> {
+    if (!this.selectedMeeting) return;
+
+    this.isLoading = true;
+
+    try {
+      if (this.visualEditor) {
+        this.selectedMeeting.full_content =
+          this.visualEditor.nativeElement.innerHTML;
+      }
+
+      const { data, error } = (await this._meeting.updateMeeting(
+        this.selectedMeeting.id,
+        this.selectedMeeting.full_content,
+      )) as any;
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const index = this.meetings.findIndex(
+          (m) => m.id === this.selectedMeeting.id,
+        );
+
+        if (index !== -1) {
+          this.meetings[index].full_content = this.selectedMeeting.full_content;
+        }
+
+        this._notify.show('Alterações salvas no banco com sucesso!', 'success');
+        this.isEditing = false;
+        this.showHtmlCode = false;
+      } else {
+        console.warn('Update enviado, mas sem retorno.');
+        this._notify.show('Salvo, mas sem confirmação de retorno.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      this._notify.show(
+        'Erro ao salvar: ' + (err.message || 'Erro desconhecido'),
+        'error',
+      );
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  //Envio do Email
+  protected sendEmail(): void {
+    const subject = encodeURIComponent(`Ata: ${this.selectedMeeting.category}`);
+    const body = encodeURIComponent(
+      `Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa disponível no sistema)`,
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+  }
+
+  //Faz a copia da Ata
+  protected copyContent(): void {
+    const plainText = this.selectedMeeting.full_content.replace(
+      /<[^>]*>?/gm,
+      '',
+    );
+
     navigator.clipboard.writeText(plainText).then(() => {
-      this._notify.show('Texto copiado para a área de transferência!', 'info'); //
+      this._notify.show('Texto copiado!', 'info');
     });
   }
 
-  sendEmail() {
-    const subject = encodeURIComponent(`Ata: ${this.selectedMeeting.category}`);
-    const body = encodeURIComponent(`Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa disponível no sistema)`);
-    window.open(`mailto:?subject=${subject}&body=${body}`);
+  //Busca as Atas no banco
+  protected async loadMeetings(): Promise<void> {
+    try {
+      const { data, error } = (await this._meeting.getUserMeetings(
+        this._userId!,
+      )) as any;
+
+      if (!error && data) {
+        this.meetings = data;
+      }
+    } catch (err) {
+      console.error('Erro ao carregar atas:', err);
+      this._notify.show('Não foi possível carregar seu histórico.', 'error');
+    }
   }
 }
