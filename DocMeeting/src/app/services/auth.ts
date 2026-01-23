@@ -10,6 +10,8 @@ import { environment } from '../../environments/environment';
 export class AuthService {
   private supabase: SupabaseClient;
   private userSubject = new BehaviorSubject<User | null>(null);
+  private creditsSubject = new BehaviorSubject<number>(0);
+  credits$ = this.creditsSubject.asObservable();
 
   // Variável que o resto do app vai "assistir" para saber se tá logado
   user$ = this.userSubject.asObservable();
@@ -17,17 +19,22 @@ export class AuthService {
   constructor() {
     this.supabase = createClient(
       environment.supabaseUrl,
-      environment.supabaseKey
+      environment.supabaseKey,
     );
 
-    // 1. Tenta recuperar sessão salva (se der F5)
-    this.supabase.auth.getUser().then(({ data }) => {
-      this.userSubject.next(data.user);
-    });
-
-    // 2. Fica ouvindo: se logar ou deslogar, avisa todo mundo
+    // Monitoramento unificado
     this.supabase.auth.onAuthStateChange((event, session) => {
-      this.userSubject.next(session?.user ?? null);
+      const user = session?.user ?? null;
+      console.log('Evento de Autenticação:', event); // Debug essencial
+
+      this.userSubject.next(user);
+
+      if (user) {
+        // Carrega os créditos sem travar o processo de login
+        this.getProfile();
+      } else {
+        this.creditsSubject.next(0);
+      }
     });
   }
 
@@ -36,10 +43,16 @@ export class AuthService {
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}`, // Volta para localhost:4200
+        redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account',
+        },
       },
     });
-    if (error) console.error('Erro no login:', error);
+    if (error) {
+      console.error('Erro ao iniciar login Google:', error.message);
+    }
   }
 
   // Logout
@@ -47,21 +60,27 @@ export class AuthService {
     await this.supabase.auth.signOut();
   }
 
-  // Pega os créditos do banco
   async getProfile() {
-    const user = this.userSubject.value;
+    const {
+      data: { user },
+    } = await this.supabase.auth.getUser();
     if (!user) return null;
 
     const { data, error } = await this.supabase
       .from('profiles')
-      .select('*')
+      .select('credits')
       .eq('id', user.id)
       .single();
 
     if (error) {
-      console.error('Erro ao buscar perfil:', error);
+      console.error('Erro ao buscar créditos no Supabase:', error);
       return null;
     }
+
+    if (data) {
+      this.creditsSubject.next(data.credits);
+    }
+
     return data;
   }
 
@@ -99,5 +118,18 @@ export class AuthService {
         emailRedirectTo: window.location.origin
       }
     });
+  }
+
+  async updateCredits(userId: string, newAmount: number) {
+    const { error } = await this.supabase
+      .from('profiles')
+      .update({ credits: newAmount })
+      .eq('id', userId);
+
+    if (!error) {
+      this.creditsSubject.next(newAmount); // Notifica todos os componentes
+      return true;
+    }
+    return false;
   }
 }
