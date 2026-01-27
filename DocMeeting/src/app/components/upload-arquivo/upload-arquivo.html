@@ -109,3 +109,7 @@
     </div>
   </div>
 }
+
+@if (isLoading) {
+  <app-loading [message]="loadingMessage"></app-loading>
+}

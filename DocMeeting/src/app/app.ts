@@ -5,10 +5,11 @@ import { UploadArquivo } from './components/upload-arquivo/upload-arquivo';
 import { AuthModal } from './components/auth-modal/auth-modal';
 import { Toast } from './components/toast/toast';
 import { DynamicModal } from './components/dynamic-modal/dynamic-modal';
+import { Loading } from './components/loading/loading';
 
 @Component({
   selector: 'app-root',
-  imports: [UploadArquivo, CommonModule, AuthModal, Toast, DynamicModal],
+  imports: [UploadArquivo, CommonModule, AuthModal, Toast, DynamicModal, Loading],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -17,29 +18,45 @@ export class App {
   credits = 0;
   showAuthModal = false;
 
+  isLoading = false;
+  loadingMessage = 'Carregando...';
+
   constructor(private authService: AuthService) {
-    // 2. Atribua o valor AQUI dentro. Agora o authService já existe.
     this.currentUser$ = this.authService.user$;
 
-    // Monitora o usuário
     this.authService.user$.subscribe(async (user) => {
       if (user) {
-        const profile = await this.authService.getProfile();
-        this.credits = profile?.credits ?? 0;
+        this.isLoading = true;
+
+        try {
+          const profile = await this.authService.getProfile();
+          this.credits = profile?.credits ?? 0;
+        } catch (error) {
+          console.error('Erro ao carregar perfil', error);
+        } finally {
+          this.isLoading = false;
+        }
       } else {
         this.credits = 0;
+        this.isLoading = false;
       }
     });
   }
 
   ngOnInit() {
     this.authService.credits$.subscribe((val) => {
-      this.credits = val; 
+      this.credits = val;
     });
   }
 
-  loginGoogle() {
-    this.authService.signInWithGoogle();
+  async loginGoogle() {
+    this.isLoading = true;
+    this.loadingMessage = 'Conectando ao Google...';
+    try {
+      await this.authService.signInWithGoogle();
+    } catch (e) {
+      this.isLoading = false;
+    }
   }
 
   loginEmail() {
@@ -47,6 +64,10 @@ export class App {
   }
 
   logout() {
-    this.authService.signOut();
+    this.isLoading = true;
+    this.loadingMessage = 'Saindo...';
+    this.authService.signOut().then(() => {
+      this.isLoading = false;
+    });
   }
 }

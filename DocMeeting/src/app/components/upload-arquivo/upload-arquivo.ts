@@ -7,23 +7,24 @@ import { Subscription } from 'rxjs';
 import { Notification } from '../../services/notification';
 import { Meetings } from '../../services/meetings';
 import { DynamicModalService } from '../../services/dynamic-modal';
+import { Loading } from '../loading/loading';
 
 @Component({
   selector: 'app-upload-arquivo',
   standalone: true,
-  imports: [CommonModule, DatePipe, FormsModule], 
+  imports: [CommonModule, DatePipe, FormsModule, Loading],
   templateUrl: './upload-arquivo.html',
   styleUrl: './upload-arquivo.scss',
 })
 export class UploadArquivo implements OnInit, OnDestroy {
   protected meetings:        any[] = [];
   protected selectedMeeting: any   = null;
-  
-  protected isLoading    = false;
-  protected isLoggedIn   = false; 
-  protected isEditing    = false;
-  protected showHtmlCode = false;
-  protected credits      = 0;
+  protected loadingMessage         = 'Carregando...';
+  protected isLoading              = false;
+  protected isLoggedIn             = false; 
+  protected isEditing              = false;
+  protected showHtmlCode           = false;
+  protected credits                = 0;
 
   private _userSub!: Subscription;
   private _userId: string | null = null;
@@ -35,7 +36,7 @@ export class UploadArquivo implements OnInit, OnDestroy {
     private _authService: AuthService, //
     private _notify: Notification, //
     private _meeting: Meetings,
-    private _modalService: DynamicModalService
+    private _modalService: DynamicModalService,
   ) {}
 
   ngOnInit() {
@@ -50,10 +51,8 @@ export class UploadArquivo implements OnInit, OnDestroy {
       }
     });
 
-    // 2. ADICIONE ISTO: Sincroniza os créditos do componente com o serviço
     this._authService.credits$.subscribe((valorReal) => {
       this.credits = valorReal;
-      console.log('Saldo sincronizado para o upload:', this.credits);
     });
   }
 
@@ -89,6 +88,7 @@ export class UploadArquivo implements OnInit, OnDestroy {
       return;
     }
 
+    this.loadingMessage = 'A IA está analisando seu arquivo e gerando a ata...';
     this.isLoading = true;
 
     try {
@@ -149,7 +149,6 @@ export class UploadArquivo implements OnInit, OnDestroy {
 
   //Deleta a Ata
   protected deleteMeeting(id: any): void {
-    // Abre o modal personalizado
     this._modalService.open({
       title: 'Excluir Ata',
       message: 'Tem certeza que deseja excluir esta ata permanentemente? Esta ação não pode ser desfeita.',
@@ -157,26 +156,26 @@ export class UploadArquivo implements OnInit, OnDestroy {
         {
           label: 'Cancelar',
           cssClass: 'btn-secondary',
-          action: () => this._modalService.close() // Apenas fecha
+          action: () => this._modalService.close() 
         },
         {
           label: 'Sim, Excluir',
           cssClass: 'btn-danger',
           action: () => {
-            this._modalService.close(); // Fecha o modal
-            this.executeDelete(id);     // Chama a rotina que vai no banco
-          }
-        }
-      ]
+            this._modalService.close(); 
+            this.executeDelete(id); 
+          },
+        },
+      ],
     });
   }
 
   private async executeDelete(id: any): Promise<void> {
+    this.loadingMessage = 'Excluindo registro permanentemente...';
     this.isLoading = true;
 
     try {
       const { error } = await this._meeting.deleteMeeting(id);
-
       if (error) throw error;
 
       this.meetings = this.meetings.filter((m) => m.id !== id);
@@ -193,7 +192,6 @@ export class UploadArquivo implements OnInit, OnDestroy {
       this.isLoading = false;
     }
   }
-
   //Fecha a tela da ata
   protected closeModal(): void {
     this.selectedMeeting = null;
@@ -202,7 +200,6 @@ export class UploadArquivo implements OnInit, OnDestroy {
   }
 
   //Visualiza apenas a Ata estilizada
-  
   protected toggleEdit(): void {
     this.isEditing = !this.isEditing;
 
@@ -235,7 +232,7 @@ export class UploadArquivo implements OnInit, OnDestroy {
     this.selectedMeeting.full_content = event.target.innerHTML;
   }
 
-  //Salva alterçaõ da Ata 
+  //Salva alterçaõ da Ata
   protected saveEdit(): void {
     if (!this.selectedMeeting) return;
 
@@ -247,21 +244,22 @@ export class UploadArquivo implements OnInit, OnDestroy {
         {
           label: 'Cancelar',
           cssClass: 'btn-secondary',
-          action: () => this._modalService.close() 
+          action: () => this._modalService.close(),
         },
         {
           label: 'Sim, Guardar',
-          cssClass: 'btn-primary', 
+          cssClass: 'btn-primary',
           action: () => {
-            this._modalService.close(); 
-            this.executeSaveEdit();     
-          }
-        }
-      ]
+            this._modalService.close();
+            this.executeSaveEdit();
+          },
+        },
+      ],
     });
   }
 
   private async executeSaveEdit(): Promise<void> {
+    this.loadingMessage = 'Salvando suas alterações...';
     this.isLoading = true;
 
     try {
@@ -281,16 +279,16 @@ export class UploadArquivo implements OnInit, OnDestroy {
         const index = this.meetings.findIndex(
           (m) => m.id === this.selectedMeeting.id,
         );
-
         if (index !== -1) {
           this.meetings[index].full_content = this.selectedMeeting.full_content;
         }
-
-        this._notify.show('Alterações guardadas no banco com sucesso!', 'success');
+        this._notify.show(
+          'Alterações guardadas no banco com sucesso!',
+          'success',
+        );
         this.isEditing = false;
         this.showHtmlCode = false;
       } else {
-        console.warn('Update enviado, mas sem retorno.');
         this._notify.show('Guardado, mas sem confirmação de retorno.');
       }
     } catch (err: any) {
@@ -314,26 +312,26 @@ export class UploadArquivo implements OnInit, OnDestroy {
         {
           label: 'Cancelar',
           cssClass: 'btn-secondary',
-          action: () => this._modalService.close()
+          action: () => this._modalService.close(),
         },
         {
           label: 'Sim, Abrir E-mail',
-          cssClass: 'btn-primary', 
+          cssClass: 'btn-primary',
           action: () => {
-            this._modalService.close(); 
-            this.executeSendEmail();    
-          }
-        }
-      ]
+            this._modalService.close();
+            this.executeSendEmail();
+          },
+        },
+      ],
     });
   }
 
   private executeSendEmail(): void {
     const subject = encodeURIComponent(`Ata: ${this.selectedMeeting.category}`);
     const body = encodeURIComponent(
-      `Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa disponível no sistema)`
+      `Resumo: ${this.selectedMeeting.summary}\n\n(Ata completa disponível no sistema)`,
     );
-    
+
     window.open(`mailto:?subject=${subject}&body=${body}`);
   }
 
@@ -351,17 +349,18 @@ export class UploadArquivo implements OnInit, OnDestroy {
 
   //Busca as Atas no banco
   protected async loadMeetings(): Promise<void> {
+    this.loadingMessage = 'Buscando seu histórico...';
+    this.isLoading = true; 
+    
     try {
-      const { data, error } = (await this._meeting.getUserMeetings(
-        this._userId!,
-      )) as any;
-
+      const { data, error } = (await this._meeting.getUserMeetings(this._userId!)) as any;
       if (!error && data) {
         this.meetings = data;
       }
     } catch (err) {
       console.error('Erro ao carregar atas:', err);
       this._notify.show('Não foi possível carregar seu histórico.', 'error');
-    }
+    } 
+    finally { this.isLoading = false; }
   }
 }
