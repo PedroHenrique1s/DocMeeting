@@ -22,7 +22,6 @@ export class GeminiService {
   async analyzeMeeting(file: File, fileContent: string | ArrayBuffer): Promise<any> {
     try {
       this.validateMimeType(file.type);
-
       const meetingSchema = z.object({
         category: z.string().describe("Uma categoria curta para a reunião"),
         quickSummary: z.string().describe("Uma frase resumindo o tópico principal"),
@@ -32,8 +31,23 @@ export class GeminiService {
       const structuredModel = this.model.withStructuredOutput(meetingSchema);
 
       const systemInstruction = new SystemMessage(`
-        ATUE COMO: Um Assistente Executivo Sênior...
-        (Mantenha seu prompt aqui, ele está ótimo)
+        ATUE COMO: Um Assistente Executivo Sênior altamente qualificado e especialista em documentação corporativa.
+        SEU OBJETIVO: Analisar a transcrição ou registro de uma reunião e produzir uma Ata de Reunião profissional, clara e acionável.
+        DIRETRIZES DE ANÁLISE:
+        1. Identificação do Tema: Determine o objetivo central da reunião logo no início.
+        2. Filtragem de Ruído: Ignore conversas paralelas, piadas ou "small talk" que não agregam ao negócio. Foco total em decisões e informações.
+        3. Estruturação Lógica: Não transcreva cronologicamente (quem falou o quê). Em vez disso, agrupe por TÓPICOS.
+        4. Itens de Ação (Action Items): Identifique claramente: O que deve ser feito? Quem é o responsável? Qual o prazo (se mencionado)?
+        5. Decisões Tomadas: Destaque explicitamente o que foi martelado/decidido.
+        DIRETRIZES DE FORMATAÇÃO (HTML para styledContent):
+        - O campo 'styledContent' deve ser um HTML rico e visualmente agradável.
+        - Use <h2> para títulos das seções (ex: "Pauta", "Decisões", "Próximos Passos").
+        - Use <ul> e <li> para listas, facilitando a leitura rápida.
+        - Use <strong> para destacar nomes de responsáveis, prazos e decisões críticas.
+        - Se houver impedimentos ou riscos mencionados, crie uma seção de <h3 style="color: #d9534f">⚠️ Pontos de Atenção</h3>.
+        TOM DE VOZ:
+        - Profissional, impessoal e direto.
+        - Use a norma culta, mas com linguagem corporativa moderna.
       `);
 
       let contentParts: any[] = [];
@@ -46,38 +60,31 @@ export class GeminiService {
           const decoder = new TextDecoder('utf-8');
           textData = decoder.decode(fileContent);
         }
-        contentParts.push({ 
-          type: "text", 
-          text: `Conteúdo da reunião (Texto/Log):\n${textData}` 
+        contentParts.push({
+          type: "text",
+          text: `Conteúdo da reunião (Texto/Log):\n${textData}`
         });
-      } 
-      
-      else {
-        const buffer = typeof fileContent === 'string' 
+
+      }else {
+        const buffer = typeof fileContent === 'string'
           ? new TextEncoder().encode(fileContent).buffer
           : fileContent;
-
-        // 🔥 OTIMIZAÇÃO AQUI: Conversão Assíncrona Rápida
-        const base64 = await this.bufferToBase64Async(buffer);
         
+        const base64 = this.arrayBufferToBase64(buffer);
         const mimeType = file.type || 'application/octet-stream';
-
-        // Envia como 'media' para evitar o erro "model does not support images"
         contentParts.push({
-          type: "media", 
+          type: "media",
           mimeType: mimeType,
           data: base64
         } as any);
       }
 
       const userMessage = new HumanMessage({ content: contentParts });
-
-      console.log('🤖 Enviando para o Gemini...');
       const response = await structuredModel.invoke([systemInstruction, userMessage]);
-      return response; 
+      return response;
 
     } catch (error) {
-      console.error("ERRO GEMINI:", error);
+      console.error("ERRO DETALHADO:", error);
       throw error;
     }
   }
@@ -86,31 +93,18 @@ export class GeminiService {
     const isText = mimeType.startsWith('text/');
     const isAudio = mimeType.startsWith('audio/');
     const isVideo = mimeType.startsWith('video/');
-    
-    if (mimeType.startsWith('image/')) {
-      throw new Error(`Imagens (${mimeType}) não são suportadas. Use Áudio, Vídeo ou Texto.`);
-    }
-
-    if (!isText && !isAudio && !isVideo) {
-      throw new Error(`Formato não suportado: ${mimeType}`);
-    }
+    if (mimeType.startsWith('image/')) throw new Error(`Imagens (${mimeType}) não são suportadas para geração de Atas. Use Áudio, Vídeo ou Texto.`);
+    if (!isText && !isAudio && !isVideo) throw new Error(`Formato de arquivo não suportado: ${mimeType}`);
   }
 
-  private bufferToBase64Async(buffer: ArrayBuffer): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const blob = new Blob([buffer]);
-      const reader = new FileReader();
-      
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        // Remove o prefixo "data:audio/wav;base64," para pegar só os dados
-        const base64 = dataUrl.split(',')[1];
-        resolve(base64);
-      };
-      
-      reader.onerror = (error) => reject(error);
-      
-      reader.readAsDataURL(blob);
-    });
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    let binary = '';
+
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
   }
 }
