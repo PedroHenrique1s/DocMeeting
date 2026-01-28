@@ -8,6 +8,7 @@ import { Notification } from '../../services/notification';
 import { Meetings } from '../../services/meetings';
 import { DynamicModalService } from '../../services/dynamic-modal';
 import { Loading } from '../loading/loading';
+import { MediaOptimization } from '../../services/media-optimization';
 
 @Component({
   selector: 'app-upload-arquivo',
@@ -33,10 +34,11 @@ export class UploadArquivo implements OnInit, OnDestroy {
 
   constructor(
     private geminiService: GeminiService,
-    private _authService: AuthService, //
-    private _notify: Notification, //
+    private _authService: AuthService, 
+    private _notify: Notification, 
     private _meeting: Meetings,
     private _modalService: DynamicModalService,
+    private _mediaOptimizer: MediaOptimization
   ) {}
 
   ngOnInit() {
@@ -63,6 +65,7 @@ export class UploadArquivo implements OnInit, OnDestroy {
   //Função principal do Upload de arquivos
   protected async onFileSelected(event: any): Promise<void> {
     const file = event.target.files[0];
+    const rawFile = event.target.files[0];
     if (!file) return;
 
     if (!this.isLoggedIn) {
@@ -80,24 +83,31 @@ export class UploadArquivo implements OnInit, OnDestroy {
       return;
     }
 
-    const allowedExtensions = ['mp3', 'mp4', 'txt'];
-    const extension = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['mp3', 'mp4', 'txt', 'wav', 'm4a', 'webm'];
+    const extension = rawFile.name.split('.').pop()?.toLowerCase();
+    
     if (!extension || !allowedExtensions.includes(extension)) {
       this._notify.show('Formato inválido!', 'error');
       event.target.value = '';
       return;
     }
 
-    this.loadingMessage = 'A IA está analisando seu arquivo e gerando a ata...';
     this.isLoading = true;
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const result = await this.geminiService.analyzeMeeting(file, arrayBuffer);
+      this.loadingMessage = 'Otimizando áudio para IA...';
+      
+      const optimizedFile = await this._mediaOptimizer.optimizeMedia(rawFile);
+      
+      this.loadingMessage = 'A IA está analisando a reunião...';
+
+      const arrayBuffer = await optimizedFile.arrayBuffer();
+      
+      const result = await this.geminiService.analyzeMeeting(optimizedFile, arrayBuffer);
 
       const meetingData = {
         user_id: this._userId,
-        title: file.name,
+        title: rawFile.name, 
         category: result.category,
         summary: result.quickSummary,
         full_content: result.styledContent,
@@ -129,10 +139,7 @@ export class UploadArquivo implements OnInit, OnDestroy {
         throw new Error(error?.message || 'Falha ao salvar no banco de dados');
       }
     } catch (error: any) {
-      this._notify.show(
-        error.message || 'Erro ao processar com Gemini.',
-        'error',
-      );
+      this._notify.show(error.message || 'Erro ao processar.', 'error');
       console.error(error);
     } finally {
       this.isLoading = false;
