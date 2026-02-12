@@ -1,129 +1,105 @@
 import { Injectable } from '@angular/core';
-import { GoogleGenAI } from '@google/genai';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { z } from 'zod';
 import { environment } from '../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GeminiService {
-  private ai: GoogleGenAI;
+  private model: ChatGoogleGenerativeAI;
 
   constructor() {
-    this.ai = new GoogleGenAI({
-      apiKey: environment.apiKey
+    this.model = new ChatGoogleGenerativeAI({
+      apiKey: environment.apiKey,
+      model: 'gemini-flash-latest', 
+      maxRetries: 3,
+      temperature: 0.2,
     });
   }
 
   async analyzeMeeting(file: File, fileContent: string | ArrayBuffer): Promise<any> {
     try {
-      const MODEL_NAME = 'gemini-flash-latest'; 
-      console.log(`--- Processando arquivo: ${file.name} (${file.type}) ---`);
+      this.validateMimeType(file.type);
+      const meetingSchema = z.object({
+        category: z.string().describe("Uma categoria curta para a reunião"),
+        quickSummary: z.string().describe("Uma frase resumindo o tópico principal"),
+        styledContent: z.string().describe("O conteúdo da ata formatado em HTML.")
+      });
 
-      const systemPrompt = `
-        Você é um assistente administrativo eficiente atuando em nome da Pessoa.
-        Analise o registro desta reunião e gere a Ata da Daily Scrum.
-        Gere um resumo completo com todas informações descritas trazendo informação clara.
-        
-        SAÍDA OBRIGATÓRIA (JSON):
-        Retorne APENAS um objeto JSON com a seguinte estrutura, sem markdown em volta:
-        {
-          "category": "Uma categoria curta (ex: Alinhamento de cadastro)",
-          "quickSummary": "Uma frase resumindo o que entrou (ex: Definição de prazos para o módulo X)",
-          "styledContent": "O conteúdo completo da ata formatado em HTML bonito (use tags <h2>, <ul>, <strong>, etc) para ser exibido diretamente em um site."
+      const structuredModel = this.model.withStructuredOutput(meetingSchema);
+
+      const systemInstruction = new SystemMessage(`
+        ATUE COMO: Um Assistente Executivo Sênior altamente qualificado e especialista em documentação corporativa.
+        SEU OBJETIVO: Analisar a transcrição ou registro de uma reunião e produzir uma Ata de Reunião profissional, clara e acionável.
+        DIRETRIZES DE ANÁLISE:
+        1. Identificação do Tema: Determine o objetivo central da reunião logo no início.
+        2. Filtragem de Ruído: Ignore conversas paralelas, piadas ou "small talk" que não agregam ao negócio. Foco total em decisões e informações.
+        3. Estruturação Lógica: Não transcreva cronologicamente (quem falou o quê). Em vez disso, agrupe por TÓPICOS.
+        4. Itens de Ação (Action Items): Identifique claramente: O que deve ser feito? Quem é o responsável? Qual o prazo (se mencionado)?
+        5. Decisões Tomadas: Destaque explicitamente o que foi martelado/decidido.
+        DIRETRIZES DE FORMATAÇÃO (HTML para styledContent):
+        - O campo 'styledContent' deve ser um HTML rico e visualmente agradável.
+        - Use <h2> para títulos das seções (ex: "Pauta", "Decisões", "Próximos Passos").
+        - Use <ul> e <li> para listas, facilitando a leitura rápida.
+        - Use <strong> para destacar nomes de responsáveis, prazos e decisões críticas.
+        - Se houver impedimentos ou riscos mencionados, crie uma seção de <h3 style="color: #d9534f">⚠️ Pontos de Atenção</h3>.
+        TOM DE VOZ:
+        - Profissional, impessoal e direto.
+        - Use a norma culta, mas com linguagem corporativa moderna.
+      `);
+
+      let contentParts: any[] = [];
+
+      if (file.type.startsWith('text/')) {
+        let textData = '';
+        if (typeof fileContent === 'string') {
+          textData = fileContent;
+        } else if (fileContent instanceof ArrayBuffer) {
+          const decoder = new TextDecoder('utf-8');
+          textData = decoder.decode(fileContent);
         }
-      `;
-
-      let parts: any[] = [{ text: systemPrompt }];
-
-      if (typeof fileContent === 'string') {
-        console.log('Detectado conteúdo de TEXTO');
-        parts.push({ text: `Conteúdo da reunião:\n${fileContent}` });
-      
-      } else if (fileContent instanceof ArrayBuffer) {
-        console.log('Detectado conteúdo BINÁRIO (Imagem/Áudio)');
-        const base64Data = this.arrayBufferToBase64(fileContent);
-        
-        parts.push({
-          inlineData: {
-            mimeType: file.type || 'application/octet-stream',
-            data: base64Data
-          }
+        contentParts.push({
+          type: "text",
+          text: `Conteúdo da reunião (Texto/Log):\n${textData}`
         });
+
+      }else {
+        const buffer = typeof fileContent === 'string'
+          ? new TextEncoder().encode(fileContent).buffer
+          : fileContent;
+        
+        const base64 = this.arrayBufferToBase64(buffer);
+        const mimeType = file.type || 'application/octet-stream';
+        contentParts.push({
+          type: "media",
+          mimeType: mimeType,
+          data: base64
+        } as any);
       }
 
-      return await this.generateWithRetry(MODEL_NAME, parts);
+      const userMessage = new HumanMessage({ content: contentParts });
+      const response = await structuredModel.invoke([systemInstruction, userMessage]);
+      return response;
 
     } catch (error) {
-      console.error("ERRO FINAL:", error);
+      console.error("ERRO DETALHADO:", error);
       throw error;
     }
   }
 
-  private async generateWithRetry(modelName: string, parts: any[], attempts = 0): Promise<any> {
-    const maxAttempts = 3;
-    
-    try {
-      const response = await this.ai.models.generateContent({
-        model: modelName,
-        contents: [{ role: 'user', parts: parts }],
-        config: { responseMimeType: 'application/json' }
-      });
-
-      console.log('Sucesso! Processando resposta...');
-      
-      const jsonString = this.extractTextFromResponse(response);
-      
-      console.log('Texto extraído:', jsonString);
-      return JSON.parse(jsonString || '{}');
-
-    } catch (error: any) {
-      const errString = error.toString();
-      const isRetryable = 
-        error.status === 429 || 
-        error.status === 503 || 
-        errString.includes('429') ||
-        errString.includes('Network') ||
-        errString.includes('Failed to fetch');
-
-      if (isRetryable && attempts < maxAttempts) {
-        console.warn(`Tentativa ${attempts + 1} falhou. Retentando em 5s...`);
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        return this.generateWithRetry(modelName, parts, attempts + 1);
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  // --- FUNÇÃO SALVA-VIDAS ---
-  // Tenta pegar o texto seja lá como ele veio (Função, Propriedade ou Array)
-  private extractTextFromResponse(response: any): string {
-    if (!response) return '{}';
-
-    // 1. Tenta como função (padrão antigo)
-    if (typeof response.text === 'function') {
-      return response.text();
-    }
-    
-    // 2. Tenta como propriedade (padrão Python/Novo JS)
-    if (typeof response.text === 'string') {
-      return response.text;
-    }
-
-    // 3. Tenta cavar no objeto JSON bruto (Padrão REST)
-    if (response.candidates && response.candidates.length > 0) {
-      const candidate = response.candidates[0];
-      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        return candidate.content.parts[0].text || '{}';
-      }
-    }
-
-    console.warn('Formato de resposta desconhecido:', response);
-    return '{}';
+  private validateMimeType(mimeType: string): void {
+    const isText = mimeType.startsWith('text/');
+    const isAudio = mimeType.startsWith('audio/');
+    const isVideo = mimeType.startsWith('video/');
+    if (mimeType.startsWith('image/')) throw new Error(`Imagens (${mimeType}) não são suportadas para geração de Atas. Use Áudio, Vídeo ou Texto.`);
+    if (!isText && !isAudio && !isVideo) throw new Error(`Formato de arquivo não suportado: ${mimeType}`);
   }
 
   private arrayBufferToBase64(buffer: ArrayBuffer): string {
     let binary = '';
+
     const bytes = new Uint8Array(buffer);
     const len = bytes.byteLength;
     for (let i = 0; i < len; i++) {

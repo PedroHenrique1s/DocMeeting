@@ -62,12 +62,16 @@ export class UploadArquivo implements OnInit, OnDestroy {
 
   //Função principal do Upload de arquivos
   protected async onFileSelected(event: any): Promise<void> {
-    const file = event.target.files[0];
+    // Captura a referência do input para limpar depois
+    const input = event.target;
+    const file = input.files?.[0];
+
+    // 1. Validações Iniciais
     if (!file) return;
 
     if (!this.isLoggedIn) {
       this._notify.show('Você precisa estar logado.', 'error');
-      event.target.value = '';
+      input.value = '';
       return;
     }
 
@@ -76,23 +80,54 @@ export class UploadArquivo implements OnInit, OnDestroy {
         'Você não possui créditos (💎 0). Adquira mais para continuar.',
         'error',
       );
-      event.target.value = '';
+      input.value = '';
       return;
     }
 
+    // 2. Validação de Formato
     const allowedExtensions = ['mp3', 'mp4', 'txt'];
     const extension = file.name.split('.').pop()?.toLowerCase();
+
     if (!extension || !allowedExtensions.includes(extension)) {
-      this._notify.show('Formato inválido!', 'error');
-      event.target.value = '';
+      this._notify.show('Formato inválido! Use MP3, MP4 ou TXT.', 'error');
+      input.value = '';
       return;
     }
 
-    this.loadingMessage = 'A IA está analisando seu arquivo e gerando a ata...';
+    // 3. Validação de Tamanho (Proteção para MP4)
+    // Carregar arquivos > 500MB em ArrayBuffer pode travar a aba do navegador
+    const MAX_SIZE_MB = 500; 
+    const MAX_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+    if (file.size > MAX_BYTES) {
+      this._notify.show(`O arquivo é muito grande para processamento direto (Limite: ${MAX_SIZE_MB}MB).`, 'error');
+      input.value = '';
+      return;
+    }
+
+    // Início do Processamento
+    this.loadingMessage = 'Lendo arquivo e iniciando análise com IA...';
     this.isLoading = true;
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
+      // 4. Leitura do Arquivo (Onde o erro NotReadableError acontece)
+      // Isolamos isso num try/catch próprio para dar uma mensagem clara
+      let arrayBuffer: ArrayBuffer;
+      
+      try {
+        arrayBuffer = await file.arrayBuffer();
+      } catch (readError: any) {
+        // Esse é o erro específico que você estava tendo
+        if (readError.name === 'NotReadableError') {
+          throw new Error('Não foi possível ler o arquivo. Se o vídeo estiver aberto em algum player (VLC, Media Player), feche-o e tente novamente.');
+        }
+        throw readError; // Se for outro erro, joga para o catch principal
+      }
+
+      // 5. Envio para o Gemini
+      // Atualiza msg para o usuário saber que a leitura do arquivo passou e agora é com a IA
+      this.loadingMessage = 'Gerando a ata da reunião... aguarde.';
+      
       const result = await this.geminiService.analyzeMeeting(file, arrayBuffer);
 
       const meetingData = {
@@ -104,11 +139,13 @@ export class UploadArquivo implements OnInit, OnDestroy {
         created_at: new Date(),
       };
 
+      // 6. Salvamento no Banco
       const { data, error } = (await this._meeting.saveMeeting(
         meetingData,
       )) as any;
 
       if (!error && data && data.length > 0) {
+        // 7. Consumo de Créditos
         const consumiu = await this._authService.updateCredits(
           this._userId!,
           this.credits - 1,
@@ -128,15 +165,17 @@ export class UploadArquivo implements OnInit, OnDestroy {
       } else {
         throw new Error(error?.message || 'Falha ao salvar no banco de dados');
       }
+
     } catch (error: any) {
+      console.error('Erro no processamento:', error);
+      
       this._notify.show(
         error.message || 'Erro ao processar com Gemini.',
         'error',
       );
-      console.error(error);
     } finally {
       this.isLoading = false;
-      event.target.value = '';
+      input.value = ''; // Limpa o input para permitir selecionar o mesmo arquivo novamente se falhar
     }
   }
 
