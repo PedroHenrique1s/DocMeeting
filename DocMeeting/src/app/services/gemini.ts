@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { z } from 'zod';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
