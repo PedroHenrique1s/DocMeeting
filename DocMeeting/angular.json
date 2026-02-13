@@ -17,6 +17,14 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "allowedCommonJsDependencies": [
+              "p-queue",
+              "decamelize",
+              "camelcase",
+              "ansi-styles",
+              "base64-js",
+              "semver"
+            ],
             "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
